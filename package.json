@@ -1,0 +1,24 @@
+{
+  "name": "acore-deploy",
+  "version": "1.0.0",
+  "description": "本仓库用于快速部署 AzerothCore（魔兽世界 3.3.5a 版本）的认证服务器（authserver）和世界服务器（worldserver），支持通过 Docker Compose 在测试环境或小型生产环境（约 10 人规模）中运行。",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/domonic18/acore-deploy.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/domonic18/acore-deploy/issues"
+  },
+  "homepage": "https://github.com/domonic18/acore-deploy#readme",
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}

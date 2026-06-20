@@ -1,0 +1,57 @@
+#!/bin/bash
+
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+errors=0
+
+echo "Running sensitive data pre-commit checks..."
+
+# 1. Block .env files from being committed
+if git diff --cached --name-only | grep -qE '\.env'; then
+  echo "${RED}ERROR: .env file(s) staged for commit. Use .env.example for templates.${NC}"
+  errors=$((errors + 1))
+fi
+
+# 2. Block .secret directory
+if git diff --cached --name-only | grep -qE '^\.secret/'; then
+  echo "${RED}ERROR: .secret/ directory staged for commit.${NC}"
+  errors=$((errors + 1))
+fi
+
+# 3. Warn about data/logs directories (should be gitignored)
+if git diff --cached --name-only | grep -qE '^(data|logs)/'; then
+  echo "${YELLOW}WARNING: data/ or logs/ file(s) staged. These should normally be excluded by .gitignore.${NC}"
+fi
+
+# 4. Block hardcoded Feishu webhook URLs
+if git diff --cached -U0 | grep -qE 'open\.feishu\.cn/open-apis/bot/v2/hook/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}'; then
+  echo "${RED}ERROR: Hardcoded Feishu webhook URL detected. Use AC_FEISHU_CHAT_WEBHOOK_URL in .env.${NC}"
+  errors=$((errors + 1))
+fi
+
+# 5. Block database connection strings with IP and password
+if git diff --cached -U0 | grep -qE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+;[0-9]+;[^;]+;[^;]+;[^;]+'; then
+  echo "${RED}ERROR: Database connection string pattern detected. Use environment variables instead.${NC}"
+  errors=$((errors + 1))
+fi
+
+# 6. Block ChatTransmitter BotWsKey with non-empty value
+if git diff --cached -U0 | grep -qE 'ChatTransmitter\.BotWsKey\s*=\s*"[^"]+"'; then
+  echo "${RED}ERROR: ChatTransmitter.BotWsKey has a value. Use AC_CHAT_TRANSMITTER_BOT_WS_KEY in .env.${NC}"
+  errors=$((errors + 1))
+fi
+
+# 7. Block FeishuChat Secret with non-empty value
+if git diff --cached -U0 | grep -qE 'FeishuChat\.Secret\s*=\s*"[^"]+"'; then
+  echo "${RED}ERROR: FeishuChat.Secret has a value. Use AC_FEISHU_CHAT_SECRET in .env.${NC}"
+  errors=$((errors + 1))
+fi
+
+if [ $errors -gt 0 ]; then
+  echo "${RED}Commit blocked: $errors sensitive data issue(s) found.${NC}"
+  exit 1
+fi
+
+echo "Sensitive data checks passed."
