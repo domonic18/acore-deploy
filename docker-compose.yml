@@ -1,0 +1,68 @@
+# 部署专用 docker-compose
+# 使用外部 MySQL 数据库（测试/生产环境均已配置，无需初始化）
+#
+# 使用方法:
+#   docker-compose --env-file .env up -d
+#
+# 数据库连接通过环境变量直接传递给 AzerothCore，不写入 .conf 文件。
+# 环境变量名格式: AC_<CONFIG_NAME_UPPER_SNAKE_CASE>
+#   LoginDatabaseInfo     -> AC_LOGIN_DATABASE_INFO
+#   WorldDatabaseInfo     -> AC_WORLD_DATABASE_INFO
+#   CharacterDatabaseInfo -> AC_CHARACTER_DATABASE_INFO
+
+services:
+  ac-worldserver:
+    image: ${REGISTRY}/${NAMESPACE}/azerothcore-server:${TAG:-master}
+    container_name: ac-worldserver
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '2'
+          memory: 2G
+    volumes:
+      - ./data:/azerothcore/data
+      - ./configs:/azerothcore/env/dist/etc
+      - ./logs:/azerothcore/env/dist/logs
+      - ./lua_scripts:/azerothcore/lua_scripts
+    ports:
+      - "8086:8086"
+      - "7878:7878"
+    environment:
+      - AC_DATA_DIR=/azerothcore/data
+      - AC_LOGIN_DATABASE_INFO
+      - AC_WORLD_DATABASE_INFO
+      - AC_CHARACTER_DATABASE_INFO
+      - AC_CHAT_TRANSMITTER_BOT_WS_KEY
+      - AC_CHAT_TRANSMITTER_ELUNA_DATABASE_INFO
+      - AC_FEISHU_CHAT_WEBHOOK_URL
+      - AC_FEISHU_CHAT_SECRET
+    command: ["/azerothcore/env/dist/bin/worldserver"]
+
+  ac-authserver:
+    image: ${REGISTRY}/${NAMESPACE}/azerothcore-server:${TAG:-master}
+    container_name: ac-authserver
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    volumes:
+      - ./configs:/azerothcore/env/dist/etc
+      - ./logs:/azerothcore/env/dist/logs
+    ports:
+      - "3724:3724"
+    environment:
+      - AC_LOGIN_DATABASE_INFO
+    command: ["/azerothcore/env/dist/bin/authserver"]

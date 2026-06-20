@@ -1,0 +1,64 @@
+# 本地构建镜像专用 docker-compose
+# 使用本地构建的 acore/ac-wotlk-worldserver 和 acore/ac-wotlk-authserver 镜像
+#
+# 使用方法:
+#   docker-compose -f docker-compose.local.yml --env-file .env up -d
+#
+# 数据库连接通过环境变量直接传递给 AzerothCore，不写入 .conf 文件。
+# 环境变量名格式: AC_<CONFIG_NAME_UPPER_SNAKE_CASE>
+#   LoginDatabaseInfo     -> AC_LOGIN_DATABASE_INFO
+#   WorldDatabaseInfo     -> AC_WORLD_DATABASE_INFO
+#   CharacterDatabaseInfo -> AC_CHARACTER_DATABASE_INFO
+
+services:
+  ac-worldserver:
+    image: acore/ac-wotlk-worldserver:master
+    container_name: ac-worldserver
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '2'
+          memory: 2G
+    volumes:
+      - ./data:/azerothcore/data
+      - ./configs:/azerothcore/env/dist/etc
+      - ./logs:/azerothcore/env/dist/logs
+      - ./lua_scripts:/azerothcore/lua_scripts
+    ports:
+      - "8086:8086"
+      - "7878:7878"
+    environment:
+      - AC_DATA_DIR=/azerothcore/data
+      - AC_LOGIN_DATABASE_INFO
+      - AC_WORLD_DATABASE_INFO
+      - AC_CHARACTER_DATABASE_INFO
+    command: ["/azerothcore/env/dist/bin/worldserver"]
+
+  ac-authserver:
+    image: acore/ac-wotlk-authserver:master
+    container_name: ac-authserver
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    volumes:
+      - ./configs:/azerothcore/env/dist/etc
+      - ./logs:/azerothcore/env/dist/logs
+    ports:
+      - "3724:3724"
+    environment:
+      - AC_LOGIN_DATABASE_INFO
+    command: ["/azerothcore/env/dist/bin/authserver"]
