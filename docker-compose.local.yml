@@ -38,6 +38,7 @@ services:
       - AC_LOGIN_DATABASE_INFO
       - AC_WORLD_DATABASE_INFO
       - AC_CHARACTER_DATABASE_INFO
+      - AC_REALMID
     command: ["/azerothcore/env/dist/bin/worldserver"]
 
   ac-authserver:
