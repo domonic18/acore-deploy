@@ -22,6 +22,10 @@
 │   ├── authserver.conf
 │   ├── worldserver.conf
 │   └── modules/              # 各模块配置
+├── scripts/                  # 部署与数据库更新脚本
+│   ├── acore-build-deploy.sh # 本地构建 server 镜像并部署
+│   ├── acore-deploy-prod.sh  # 拉取预构建镜像并部署到生产环境
+│   └── acore-update-db.sh    # 更新远程数据库
 ├── lua_scripts/              # 自定义 Lua 脚本
 └── logs/                     # 运行日志（不提交到仓库）
 ```
@@ -65,6 +69,58 @@ docker-compose -f docker-compose.local.yml --env-file .env up -d
 - **不要将 `.env` 提交到仓库**，它已在 `.gitignore` 中排除。
 - 模块中的敏感字段（如 `FeishuChat.WebhookUrl`、`FeishuChat.Secret`）在配置文件中保持为空，实际值通过 `.env` 的环境变量注入。
 - 仓库已配置 Husky pre-commit hook，提交前会自动扫描敏感信息；如果命中规则，commit 将被阻止。
+
+## 脚本工具
+
+项目根目录下的 `scripts/` 目录封装了常用的部署和数据库更新脚本。
+
+### 生产环境部署（拉取预构建镜像）
+
+`scripts/acore-deploy-prod.sh` 用于从镜像仓库拉取已构建好的 server 镜像并部署，适合 CI/CD 发布流程。
+
+```bash
+# 使用 .env 中的 TAG 部署
+./scripts/acore-deploy-prod.sh
+
+# 预览将要执行的命令
+./scripts/acore-deploy-prod.sh --dry-run
+
+# 临时指定镜像标签（不修改 .env）
+./scripts/acore-deploy-prod.sh --tag master-4eb3baf
+
+# 指定其他环境文件
+./scripts/acore-deploy-prod.sh --env-file ./.env.prod
+```
+
+### 本地构建并部署
+
+`scripts/acore-build-deploy.sh` 用于在本地编译 AzerothCore 源码并部署，适合开发调试。
+
+```bash
+# 构建 develop-local 镜像并部署
+./scripts/acore-build-deploy.sh
+
+# 只构建不部署
+./scripts/acore-build-deploy.sh --no-deploy
+
+# 指定标签
+./scripts/acore-build-deploy.sh --tag feature-xyz
+```
+
+### 数据库更新
+
+`scripts/acore-update-db.sh` 用于将 AzerothCore 的 SQL updates 同步到远程数据库。
+
+```bash
+# 自动应用所有 pending updates
+./scripts/acore-update-db.sh
+
+# 预览模式
+./scripts/acore-update-db.sh --dry-run
+
+# 单独导入指定 SQL 文件
+./scripts/acore-update-db.sh --sql-file /path/to/file.sql --database acore_characters
+```
 
 ## 常用操作
 

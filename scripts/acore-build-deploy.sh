@@ -3,7 +3,7 @@ set -euo pipefail
 
 # 在本地构建 AzerothCore server 镜像，并部署到当前 acore-deploy 项目。
 # 使用方法:
-#   ./scripts/build-deploy.sh [OPTIONS]
+#   ./scripts/acore-build-deploy.sh [OPTIONS]
 #
 # 默认读取 acore-deploy/.env 中的配置。
 # ACORE_DIR 优先顺序: --acore-dir 参数 > .env 中的 ACORE_DIR

@@ -3,7 +3,7 @@ set -euo pipefail
 
 # 在本地构建 AzerothCore db-import 镜像，并对远程数据库执行导入/更新。
 # 使用方法:
-#   ./scripts/update-db.sh [OPTIONS]
+#   ./scripts/acore-update-db.sh [OPTIONS]
 #
 # 默认读取 acore-deploy/.env 中的配置。
 # ACORE_DIR 优先顺序: --acore-dir 参数 > .env 中的 ACORE_DIR

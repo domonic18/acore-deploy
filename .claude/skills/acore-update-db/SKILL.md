@@ -14,7 +14,7 @@ description: 在本地构建 AzerothCore db-import 镜像，并使用当前 acor
 
 ## 前置要求
 
-当前工作目录应为 `acore-deploy` 项目根目录。本技能使用相对路径读取 `./.env`、`./configs/dbimport.conf` 和 `./scripts/update-db.sh`。
+当前工作目录应为 `acore-deploy` 项目根目录。本技能使用相对路径读取 `./.env`、`./configs/dbimport.conf` 和 `./scripts/acore-update-db.sh`。
 
 ## 参数
 
@@ -30,7 +30,7 @@ description: 在本地构建 AzerothCore db-import 镜像，并使用当前 acor
 本技能对应一个可直接运行的脚本：
 
 ```bash
-./scripts/update-db.sh
+./scripts/acore-update-db.sh
 ```
 
 该脚本会自动根据所在位置定位 `acore-deploy` 项目根目录，并默认从该目录读取 `.env` 和 `configs/dbimport.conf`。
@@ -52,32 +52,32 @@ cd <acore-deploy-root>
 - `./.env`（包含 `ACORE_DIR`、`AC_LOGIN_DATABASE_INFO`、`AC_WORLD_DATABASE_INFO`、`AC_CHARACTER_DATABASE_INFO`）
 - `./configs/dbimport.conf`
 
-如果 `dbimport.conf` 不存在但 `dbimport.conf.dist` 存在，`scripts/update-db.sh` 会自动复制。
+如果 `dbimport.conf` 不存在但 `dbimport.conf.dist` 存在，`scripts/acore-update-db.sh` 会自动复制。
 
 ### 3. 运行更新脚本
 
 #### 3.1 自动更新模式
 
-根据参数调用 `./scripts/update-db.sh`：
+根据参数调用 `./scripts/acore-update-db.sh`：
 
 ```bash
 # 默认执行
-./scripts/update-db.sh
+./scripts/acore-update-db.sh
 
 # 预览模式
-./scripts/update-db.sh --dry-run
+./scripts/acore-update-db.sh --dry-run
 
 # 指定其他环境文件（如生产环境）
-./scripts/update-db.sh --env-file ./.env.prod
+./scripts/acore-update-db.sh --env-file ./.env.prod
 
 # 指定 AzerothCore 源码目录
-./scripts/update-db.sh --acore-dir /path/to/azerothcore-wotlk
+./scripts/acore-update-db.sh --acore-dir /path/to/azerothcore-wotlk
 ```
 
 组合示例：
 
 ```bash
-./scripts/update-db.sh --dry-run --env-file ./.env.prod
+./scripts/acore-update-db.sh --dry-run --env-file ./.env.prod
 ```
 
 #### 3.2 单文件导入模式
@@ -86,10 +86,10 @@ cd <acore-deploy-root>
 
 ```bash
 # 导入指定 SQL 到 acore_characters
-./scripts/update-db.sh --sql-file /path/to/file.sql --database acore_characters
+./scripts/acore-update-db.sh --sql-file /path/to/file.sql --database acore_characters
 
 # 预览模式
-./scripts/update-db.sh --sql-file /path/to/file.sql --database acore_characters --dry-run
+./scripts/acore-update-db.sh --sql-file /path/to/file.sql --database acore_characters --dry-run
 ```
 
 ### 4. 信息不足时的处理

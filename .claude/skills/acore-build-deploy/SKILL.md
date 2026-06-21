@@ -13,7 +13,7 @@ description: 在本地构建 AzerothCore server 镜像，并部署到当前 acor
 
 ## 前置要求
 
-当前工作目录应为 `acore-deploy` 项目根目录。本技能使用相对路径读取 `./.env`、`./scripts/build-deploy.sh`，并通过 `.env` 中的 `ACORE_DIR` 定位 AzerothCore 源码。
+当前工作目录应为 `acore-deploy` 项目根目录。本技能使用相对路径读取 `./.env`、`./scripts/acore-build-deploy.sh`，并通过 `.env` 中的 `ACORE_DIR` 定位 AzerothCore 源码。
 
 ## 参数
 
@@ -28,7 +28,7 @@ description: 在本地构建 AzerothCore server 镜像，并部署到当前 acor
 本技能对应一个可直接运行的脚本：
 
 ```bash
-./scripts/build-deploy.sh
+./scripts/acore-build-deploy.sh
 ```
 
 该脚本会自动根据所在位置定位 `acore-deploy` 项目根目录，并默认从 `./.env` 读取 `ACORE_DIR`、`REGISTRY`、`NAMESPACE` 等配置。
@@ -53,23 +53,23 @@ cd <acore-deploy-root>
 
 ### 3. 运行编译部署脚本
 
-根据参数调用 `./scripts/build-deploy.sh`：
+根据参数调用 `./scripts/acore-build-deploy.sh`：
 
 ```bash
 # 默认：构建 develop-local 镜像并部署
-./scripts/build-deploy.sh
+./scripts/acore-build-deploy.sh
 
 # 指定标签
-./scripts/build-deploy.sh --tag feature-xyz
+./scripts/acore-build-deploy.sh --tag feature-xyz
 
 # 只构建不部署
-./scripts/build-deploy.sh --no-deploy
+./scripts/acore-build-deploy.sh --no-deploy
 
 # 指定其他环境文件
-./scripts/build-deploy.sh --env-file ./.env.local
+./scripts/acore-build-deploy.sh --env-file ./.env.local
 
 # 指定 AzerothCore 源码目录
-./scripts/build-deploy.sh --acore-dir /path/to/azerothcore-wotlk
+./scripts/acore-build-deploy.sh --acore-dir /path/to/azerothcore-wotlk
 ```
 
 ### 4. 验证结果
