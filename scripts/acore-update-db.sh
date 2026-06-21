@@ -23,6 +23,7 @@ TAG=""
 ACORE_DIR_ARG=""
 SQL_FILE=""
 TARGET_DB=""
+FORCE_REBUILD=false
 
 usage() {
     cat <<EOF
@@ -30,6 +31,8 @@ Usage: $0 [OPTIONS]
 
 Options:
   --dry-run            Preview updates without applying them
+  --force-rebuild      Force db-import image rebuild without cache
+                       when uncommitted SQL changes are detected
   --env-file <path>    Path to .env file (default: $ENV_FILE)
   --tag <tag>          Docker image tag (default: current git short sha)
   --acore-dir <path>   Path to AzerothCore source directory
@@ -61,6 +64,10 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --dry-run)
             DRY_RUN=true
+            shift
+            ;;
+        --force-rebuild)
+            FORCE_REBUILD=true
             shift
             ;;
         --env-file)
@@ -161,6 +168,19 @@ parse_db_info() {
     fi
 }
 
+# 返回 AzerothCore 源码中 data/sql 或 modules 目录下未提交的 .sql 文件变更列表
+get_sql_changes() {
+    if [[ ! -d "$ACORE_DIR/.git" ]]; then
+        return 1
+    fi
+    git -C "$ACORE_DIR" status --porcelain -- data/sql modules 2>/dev/null | grep -E '\.sql$' || true
+}
+
+# 检查 AzerothCore 源码中是否有 SQL 相关文件发生未提交变更
+has_sql_changes() {
+    [[ -n "$(get_sql_changes)" ]]
+}
+
 # 解析 ACORE_DIR：--acore-dir 参数 > .env 中的 ACORE_DIR
 if [[ -n "$ACORE_DIR_ARG" ]]; then
     ACORE_DIR="$ACORE_DIR_ARG"
@@ -195,8 +215,25 @@ IMAGE="azerothcore-db-import:$TAG"
 
 echo "Using AzerothCore source: $ACORE_DIR"
 echo "Building db-import image: $IMAGE"
+
+DOCKER_BUILD_ARGS=()
+SQL_CHANGES=$(get_sql_changes || true)
+if [[ -n "$SQL_CHANGES" ]]; then
+    echo ""
+    echo "Detected uncommitted SQL changes in data/sql or modules:"
+    echo "$SQL_CHANGES" | sed 's/^/  /'
+    echo ""
+
+    if [[ "$FORCE_REBUILD" == "true" ]]; then
+        echo "--force-rebuild specified, forcing rebuild with --no-cache..."
+        DOCKER_BUILD_ARGS+=(--no-cache)
+    else
+        echo "Pass --force-rebuild to rebuild the image without cache."
+    fi
+fi
+
 cd "$ACORE_DIR"
-docker build --target db-import -t "$IMAGE" -f apps/docker/Dockerfile .
+docker build "${DOCKER_BUILD_ARGS[@]:+${DOCKER_BUILD_ARGS[@]}}" --target db-import -t "$IMAGE" -f apps/docker/Dockerfile .
 
 # 单文件导入模式
 if [[ -n "$SQL_FILE" ]]; then

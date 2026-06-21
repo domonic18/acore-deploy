@@ -54,9 +54,20 @@ cd <acore-deploy-root>
 
 如果 `dbimport.conf` 不存在但 `dbimport.conf.dist` 存在，`scripts/acore-update-db.sh` 会自动复制。
 
-### 3. 运行更新脚本
+### 3. 确认是否强制重建镜像
 
-#### 3.1 自动更新模式
+在构建 `db-import` 镜像前，询问用户是否强制重建（不带 Docker 缓存）：
+
+> "是否强制重建 db-import 镜像（--force-rebuild）？(y/N)"
+
+- 用户确认（`y`）：在调用脚本时追加 `--force-rebuild`。
+- 用户拒绝（`N`）：直接调用脚本，复用 Docker 缓存构建。
+
+如果用户已经修改了 `data/sql` 或 `modules` 下的 SQL 文件并希望这些变更生效，应选择强制重建。
+
+### 4. 运行更新脚本
+
+#### 4.1 自动更新模式
 
 根据参数调用 `./scripts/acore-update-db.sh`：
 
@@ -80,7 +91,7 @@ cd <acore-deploy-root>
 ./scripts/acore-update-db.sh --dry-run --env-file ./.env.prod
 ```
 
-#### 3.2 单文件导入模式
+#### 4.2 单文件导入模式
 
 当用户需要导入某个指定的 `.sql` 文件时，使用 `--sql-file` 和 `--database`：
 
@@ -92,7 +103,7 @@ cd <acore-deploy-root>
 ./scripts/acore-update-db.sh --sql-file /path/to/file.sql --database acore_characters --dry-run
 ```
 
-### 4. 信息不足时的处理
+### 5. 信息不足时的处理
 
 如果用户表达的是"导入某个 SQL 文件"但未提供以下信息，应主动询问，**不要根据文件路径做任何推断**：
 
@@ -101,7 +112,7 @@ cd <acore-deploy-root>
 
 即使 SQL 文件路径中包含 `db-auth`、`db-characters` 或 `db-world` 等字样，也必须让用户明确指定目标数据库，不能自行推断。
 
-### 5. 验证结果
+### 6. 验证结果
 
 检查脚本退出码和日志输出：
 
