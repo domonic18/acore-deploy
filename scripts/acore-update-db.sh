@@ -280,6 +280,7 @@ echo "Running database update..."
 DOCKER_ARGS=(
     --rm
     -v "$CONFIGS_DIR/dbimport.conf:/azerothcore/env/dist/etc/dbimport.conf:ro"
+    -v "$PROJECT_ROOT/logs/dbimport:/azerothcore/logs"
     -e AC_LOGIN_DATABASE_INFO
     -e AC_WORLD_DATABASE_INFO
     -e AC_CHARACTER_DATABASE_INFO
