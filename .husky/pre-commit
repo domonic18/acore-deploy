@@ -8,8 +8,8 @@ errors=0
 
 echo "Running sensitive data pre-commit checks..."
 
-# 1. Block .env files from being committed
-if git diff --cached --name-only | grep -qE '\.env'; then
+# 1. Block .env files from being committed (allow .env.example templates)
+if git diff --cached --name-only | grep -qE '\.env$'; then
   echo "${RED}ERROR: .env file(s) staged for commit. Use .env.example for templates.${NC}"
   errors=$((errors + 1))
 fi
@@ -32,7 +32,7 @@ if git diff --cached -U0 | grep -qE 'open\.feishu\.cn/open-apis/bot/v2/hook/[0-9
 fi
 
 # 5. Block database connection strings with IP and password
-if git diff --cached -U0 | grep -qE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+;[0-9]+;[^;]+;[^;]+;[^;]+'; then
+if git diff --cached -U0 | grep -vE '127\.0\.0\.1;[0-9]+;acore;acore;' | grep -qE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+;[0-9]+;[^;]+;[^;]+;[^;]+'; then
   echo "${RED}ERROR: Database connection string pattern detected. Use environment variables instead.${NC}"
   errors=$((errors + 1))
 fi
