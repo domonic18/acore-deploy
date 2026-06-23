@@ -25,7 +25,9 @@
 ├── scripts/                  # 部署与数据库更新脚本
 │   ├── acore-build-deploy.sh # 本地构建 server 镜像并部署
 │   ├── acore-deploy-prod.sh  # 拉取预构建镜像并部署到生产环境
-│   └── acore-update-db.sh    # 更新远程数据库
+│   ├── acore-update-db.sh    # 更新远程数据库
+│   └── acore-update-dbc.sh   # 同步 wow-dbc 到 data/dbc/
+├── wow-dbc/                  # DBC 源文件仓库（Git submodule）
 ├── lua_scripts/              # 自定义 Lua 脚本
 └── logs/                     # 运行日志（不提交到仓库）
 ```
@@ -121,6 +123,28 @@ docker-compose -f docker-compose.local.yml --env-file .env up -d
 # 单独导入指定 SQL 文件
 ./scripts/acore-update-db.sh --sql-file /path/to/file.sql --database acore_characters
 ```
+
+### DBC 同步
+
+`scripts/acore-update-dbc.sh` 用于将 [wow-dbc](https://github.com/domonic18/wow-dbc) 仓库中的 DBC 源文件同步到 `data/dbc/`。
+
+wow-dbc 以 Git submodule 形式管理：
+
+```bash
+# 首次克隆后初始化 submodule
+git submodule update --init
+
+# 从 submodule 同步到 data/dbc/
+./scripts/acore-update-dbc.sh
+
+# 先更新 submodule 到最新，再同步
+./scripts/acore-update-dbc.sh --pull
+
+# 生产环境手动放置 wow-dbc 后，指定本地路径同步
+./scripts/acore-update-dbc.sh --local-path /opt/wow-dbc/src/dbc
+```
+
+同步后会生成 `configs/dbc-version.json`，记录当前使用的 wow-dbc commit 和同步时间，建议提交到仓库。
 
 ## 常用操作
 
