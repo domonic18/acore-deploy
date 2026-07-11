@@ -43,6 +43,7 @@ services:
       - AC_CHAT_TRANSMITTER_ELUNA_DATABASE_INFO
       - AC_FEISHU_CHAT_WEBHOOK_URL
       - AC_FEISHU_CHAT_SECRET
+      - TZ=Asia/Shanghai
     networks:
       - acore-shared-net
     command: ["/azerothcore/env/dist/bin/worldserver"]
