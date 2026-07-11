@@ -69,6 +69,7 @@ services:
       - "3724:3724"
     environment:
       - AC_LOGIN_DATABASE_INFO
+      - TZ=Asia/Shanghai
     networks:
       - acore-shared-net
     command: ["/azerothcore/env/dist/bin/authserver"]

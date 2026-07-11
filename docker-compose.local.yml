@@ -39,6 +39,7 @@ services:
       - AC_WORLD_DATABASE_INFO
       - AC_CHARACTER_DATABASE_INFO
       - AC_REALMID
+      - TZ=Asia/Shanghai
     command: ["/azerothcore/env/dist/bin/worldserver"]
 
   ac-authserver:
@@ -62,4 +63,5 @@ services:
       - "3724:3724"
     environment:
       - AC_LOGIN_DATABASE_INFO
+      - TZ=Asia/Shanghai
     command: ["/azerothcore/env/dist/bin/authserver"]
