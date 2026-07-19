@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# 将 wow-dbc 中的 DBC 源文件同步到 acore-deploy/data/dbc/
+# 将 acore-resouces/data/wow-dbc/src/dbc/ 中的 DBC 源文件同步到 acore-deploy/data/dbc/
 # 使用方法:
 #   ./scripts/acore-update-dbc.sh [OPTIONS]
 #
-# 默认从 acore-deploy/wow-dbc/src/dbc/ 同步（Git submodule）。
-# 生产环境可通过 --local-path 指向手动放置的 wow-dbc 目录。
+# 默认从 ../acore-resouces/data/wow-dbc/src/dbc/ 同步。
+# 可通过 --local-path 或 .env 中的 WOW_DBC 环境变量覆盖源目录。
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 ENV_FILE="$PROJECT_ROOT/.env"
 DRY_RUN=false
-PULL=false
 LOCAL_PATH=""
 
 usage() {
@@ -22,24 +21,20 @@ Usage: $0 [OPTIONS]
 
 Options:
   --dry-run            Preview sync without copying files
-  --pull               Update wow-dbc submodule before syncing
-  --local-path <path>  Sync from a local path instead of submodule
-                       Example: /path/to/wow-dbc/src/dbc
+  --local-path <path>  Sync from a local path instead of the default
+                       Example: /path/to/acore-resouces/data/wow-dbc/src/dbc
   --env-file <path>   Path to .env file (default: $ENV_FILE)
   -h, --help           Show this help message
 
 Default behavior:
-  Sync DBC from wow-dbc/src/dbc/ (Git submodule) to data/dbc/.
+  Sync DBC from ../acore-resouces/data/wow-dbc/src/dbc/ to data/dbc/.
 
 Examples:
-  # Sync from submodule
+  # Sync from default acore-resouces path
   $0
 
-  # Update submodule to latest, then sync
-  $0 --pull
-
-  # Sync from manually downloaded directory (production)
-  $0 --local-path /opt/wow-dbc/src/dbc
+  # Sync from a custom path (production)
+  $0 --local-path /opt/acore-resouces/data/wow-dbc/src/dbc
 
   # Preview only
   $0 --dry-run
@@ -50,10 +45,6 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --dry-run)
             DRY_RUN=true
-            shift
-            ;;
-        --pull)
-            PULL=true
             shift
             ;;
         --local-path)
@@ -109,7 +100,7 @@ if [[ -n "$LOCAL_PATH" ]]; then
 elif [[ -n "${WOW_DBC:-}" ]]; then
     SRC_DIR="$WOW_DBC"
 else
-    SRC_DIR="$PROJECT_ROOT/wow-dbc/src/dbc"
+    SRC_DIR="$PROJECT_ROOT/../acore-resouces/data/wow-dbc/src/dbc"
 fi
 
 DST_DIR="$PROJECT_ROOT/data/dbc"
@@ -117,25 +108,15 @@ VERSION_FILE="$PROJECT_ROOT/configs/dbc-version.json"
 
 if [[ ! -d "$SRC_DIR" ]]; then
     echo "Error: DBC source directory not found: $SRC_DIR" >&2
-    echo "Run with --local-path or ensure the wow-dbc submodule is initialized:" >&2
-    echo "  git submodule update --init" >&2
+    echo "Specify the source with --local-path or set WOW_DBC in .env:" >&2
+    echo "  WOW_DBC=/path/to/acore-resouces/data/wow-dbc/src/dbc" >&2
     exit 1
-fi
-
-# 如需更新 submodule
-if [[ "$PULL" == "true" ]]; then
-    if [[ -e "$PROJECT_ROOT/wow-dbc/.git" ]]; then
-        echo "Updating wow-dbc submodule..."
-        git -C "$PROJECT_ROOT" submodule update --remote wow-dbc
-    else
-        echo "Warning: --pull specified but wow-dbc is not a submodule, skipping pull." >&2
-    fi
 fi
 
 # 尝试定位 wow-dbc 仓库根目录
 REPO_DIR=""
-if [[ "$SRC_DIR" == "$PROJECT_ROOT/wow-dbc/src/dbc" ]]; then
-    REPO_DIR="$PROJECT_ROOT/wow-dbc"
+if [[ "$SRC_DIR" == */acore-resouces/data/wow-dbc/src/dbc ]]; then
+    REPO_DIR="$(cd "$SRC_DIR" && cd ../../../.. 2>/dev/null && pwd)" || REPO_DIR=""
 else
     # 对于自定义路径，尝试向上推断仓库根目录
     REPO_DIR="$(cd "$SRC_DIR" && cd ../.. 2>/dev/null && pwd)" || REPO_DIR=""
@@ -144,7 +125,7 @@ fi
 # 收集版本信息
 COMMIT="unknown"
 BRANCH="unknown"
-if [[ -e "$REPO_DIR/.git" ]]; then
+if [[ -e "${REPO_DIR:-}/.git" ]]; then
     COMMIT="$(git -C "$REPO_DIR" rev-parse --short HEAD 2>/dev/null || echo "unknown")"
     BRANCH="$(git -C "$REPO_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")"
 fi
