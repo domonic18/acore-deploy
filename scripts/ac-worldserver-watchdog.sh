@@ -3,7 +3,7 @@ set -euo pipefail
 
 CONTAINER="ac-worldserver"
 LOG_PATH="/azerothcore/env/dist/logs/Server.log"
-MAX_IDLE_SECONDS=300  # 5 分钟无日志更新即判定为卡死
+MAX_IDLE_SECONDS=1000  # 约 16 分钟无日志更新即判定为卡死
 
 cd /workspace/acore-deploy
 
