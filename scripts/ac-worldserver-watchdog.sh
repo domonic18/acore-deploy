@@ -1,27 +1,25 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# worldserver 看门狗（宿主机 cron 每分钟调用）。
+# 职责唯一：执行 Docker healthcheck 的判决。进程退出类故障（崩溃、每日 04:00
+# ServerAutoShutdown 关服）由 Docker restart: unless-stopped 原生拉起，本脚本不插手；
+# 只有进程存活但世界线程卡死（healthcheck 转 unhealthy，Docker 无能为力）才重启。
+# 刻意不含「容器不存在则拉起」分支：该场景与 Docker 策略重叠，且会与停服检修冲突
+# （compose stop 后被本脚本拉回）。存活信号见 scripts/soap-probe.sh。
+
 CONTAINER="ac-worldserver"
-LOG_PATH="/azerothcore/env/dist/logs/Server.log"
-MAX_IDLE_SECONDS=1000  # 约 16 分钟无日志更新即判定为卡死
 
 cd /workspace/acore-deploy
 
-# 容器没运行，直接拉起
-if ! docker ps -q --filter "name=^/${CONTAINER}$" | grep -q .; then
-    echo "$(date '+%F %T') ${CONTAINER} not running, starting..."
-    docker compose up -d ac-worldserver
-    exit 0
-fi
+STATUS=$(docker inspect -f '{{.State.Health.Status}}' "${CONTAINER}" 2>/dev/null || echo unknown)
 
-# 获取日志文件最后修改时间（秒）
-last_modify=$(docker exec "${CONTAINER}" stat -c %Y "${LOG_PATH}" 2>/dev/null || echo 0)
-now=$(date +%s)
-idle=$((now - last_modify))
-
-if [ "${idle}" -gt "${MAX_IDLE_SECONDS}" ]; then
-    echo "$(date '+%F %T') ${CONTAINER} idle ${idle}s, restarting..."
-    docker compose restart "${CONTAINER}"
-else
-    echo "$(date '+%F %T') ${CONTAINER} idle ${idle}s, OK"
-fi
+case "${STATUS}" in
+    healthy|starting)
+        echo "$(date '+%F %T') ${CONTAINER} ${STATUS}, OK"
+        ;;
+    *)
+        echo "$(date '+%F %T') ${CONTAINER} ${STATUS}, restarting..."
+        docker compose restart "${CONTAINER}"
+        ;;
+esac
