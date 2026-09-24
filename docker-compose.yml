@@ -30,6 +30,7 @@ services:
       - ./configs:/azerothcore/env/dist/etc
       - ./logs:/azerothcore/env/dist/logs
       - ./lua_scripts:/azerothcore/lua_scripts
+      - ./scripts/soap-probe.sh:/healthcheck/soap-probe.sh:ro
     ports:
       - "8086:8086"
       - "7878:7878"
@@ -43,12 +44,14 @@ services:
       - AC_CHAT_TRANSMITTER_ELUNA_DATABASE_INFO
       - AC_FEISHU_CHAT_WEBHOOK_URL
       - AC_FEISHU_CHAT_SECRET
+      - AC_SOAP_HEALTHCHECK_AUTH
       - TZ=Asia/Shanghai
     networks:
       - acore-shared-net
     command: ["/azerothcore/env/dist/bin/worldserver"]
     healthcheck:
-      test: ["CMD", "bash", "-c", "test $(($(date +%s) - $(stat -c %Y /azerothcore/env/dist/logs/Server.log))) -lt 300"]
+      # SOAP 应用级探针：server info 须世界线程执行完成才应答（scripts/soap-probe.sh）
+      test: ["CMD", "bash", "/healthcheck/soap-probe.sh"]
       interval: 60s
       timeout: 10s
       retries: 3
