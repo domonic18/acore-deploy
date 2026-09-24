@@ -66,7 +66,7 @@ env_key() {
     grep -E "^${1}=" "${ROOT}/.env" 2>/dev/null | head -1 | cut -d= -f2- || true
 }
 REALM="${REALM_ARG:-${COS_UPLOAD_REALM:-$(env_key COS_UPLOAD_REALM)}}"
-REALM="${REALM:-realm3}"
+REALM="${REALM:-realm2}"
 BUCKET="${COS_UPLOAD_BUCKET:-$(env_key COS_UPLOAD_BUCKET)}"
 if [ -z "${BUCKET}" ] && [ "${DRY_RUN}" -eq 0 ]; then
     echo "COS_UPLOAD_BUCKET not set (env or .env); required unless --dry-run" >&2

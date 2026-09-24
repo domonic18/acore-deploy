@@ -185,7 +185,7 @@ worldserver 的 healthcheck 采用 **SOAP 应用级探针**（`scripts/soap-prob
        ├─ anticheat:   anticheat 按日文件
        ├─ crash:       docker logs ac-worldserver 按当日时间窗导出
        ├─ 每类打包 <type>.tar.gz + manifest.json（md5/size/行数）
-       └─ coscli 上传 COS: acore-logs/realm3/{date}/   失败重试 3 次
+       └─ coscli 上传 COS: acore-logs/realm2/{date}/   失败重试 3 次
 SCF 巡检 Job（acore-manager 侧）每日 06:00 拉取 → 解析 → AI 分析 → 飞书日报
 ```
 
@@ -213,10 +213,10 @@ crontab 样例：
 
 ```bash
 COS_UPLOAD_BUCKET=your-bucket-1250000000   # 桶全称（含 APPID 后缀）
-COS_UPLOAD_REALM=realm3                    # COS key 中的 realm 段
+COS_UPLOAD_REALM=realm2                    # COS key 中的 realm 段（生产 realm 为 2，本地测试为 3）
 ```
 
-coscli 首次部署需在宿主机安装并执行 `coscli config init` 写入凭证（子账号仅需对 `acore-logs/realm3/*` 的 Put/Head/Get 权限）。
+coscli 首次部署需在宿主机安装并执行 `coscli config init` 写入凭证（子账号仅需对 `acore-logs/realm2/*` 的 Put/Head/Get 权限）。
 
 ## 常用操作
 
