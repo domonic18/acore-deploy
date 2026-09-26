@@ -41,10 +41,12 @@ for arg in "$@"; do
     esac
 done
 
-# GNU date（生产 Linux）与 BSD date（macOS 本地调试）双实现；$2 为 ±N 天
+# GNU date（生产 Linux）与 BSD date（macOS 本地调试）双实现；$2 为 ±N 天。
+# GNU 分支必须走 epoch 算术：`-d "${1} 12:00 -1 day"` 的 "-1" 会被解析为
+# 时区偏移而非天数（生产实测 +1/-1 算反），带时间成分的相对天数不可用
 shift_day() {
     if date -d 'yesterday' +%F >/dev/null 2>&1; then
-        TZ=Asia/Shanghai date -d "${1} 12:00 ${2} day" +%F
+        TZ=Asia/Shanghai date -d @$(( $(TZ=Asia/Shanghai date -d "${1}" +%s) + ${2} * 86400 )) +%F
     else
         TZ=Asia/Shanghai date -j -f '%Y-%m-%d' -v"${2}d" "${1}" +%F
     fi
