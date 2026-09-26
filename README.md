@@ -30,10 +30,12 @@
 │   ├── acore-update-dbc.sh          # 从 acore-resouces 同步 DBC 到 data/dbc/
 │   ├── ac-worldserver-watchdog.sh   # worldserver 看门狗（cron，执行 healthcheck 判决）
 │   ├── soap-probe.sh                # SOAP 应用级健康探针（docker healthcheck 调用）
-│   └── acore-upload-logs.sh         # 日志外发：归档前一日日志并上传 COS（cron）
+│   ├── acore-upload-logs.sh         # 日志外发：归档前一日日志并上传 COS（cron）
+│   └── acore-backup-databases.sh    # 数据库备份：dump 三库并上传 COS（cron）
 ├── lua_scripts/              # 自定义 Lua 脚本
 └── logs/                     # 运行日志与上传结果（不提交到仓库）
-    └── upload-result-*.json  # acore-upload-logs.sh 每日执行结果
+    ├── upload-result-*.json  # acore-upload-logs.sh 每日执行结果
+    └── db-backup-result-*.json  # acore-backup-databases.sh 执行结果
 ```
 
 ## 快速开始
@@ -217,6 +219,55 @@ COS_UPLOAD_REALM=realm2                    # COS key 中的 realm 段（生产 r
 ```
 
 coscli 首次部署需在宿主机安装并执行 `coscli config init` 写入凭证（子账号仅需对 `acore-logs/realm2/*` 的 Put/Head/Get 权限）。
+
+## 数据库备份（dump + COS 上传）
+
+每日自动 dump 三库并上传腾讯云 COS，替代旧版仅本地的 `/workspace/acore-database/scripts/backup-databases.sh`（旧脚本已停止调度，本脚本入 git 获得版本管控）。
+
+### 备份管线
+
+```text
+宿主机 cron 04:10（ubuntu）
+  └─ scripts/acore-backup-databases.sh
+       ├─ docker exec acore-mysql mysqldump --single-transaction（InnoDB 快照，不锁表）
+       │   三库 acore_auth / acore_world / acore_characters → gzip
+       ├─ 生成 manifest.json（各 .sql.gz 的 size/md5）
+       ├─ 上传 COS: acore-db-backup/realm2/<YYYYMMDD_HHMMSS>/   失败重试 3 次
+       ├─ 逐对象 stat 校验（Content-Length 精确字节；ETAG 仅软比对，分片对象 ETAG 非 md5）
+       └─ 本地 backups/ 仅保留最近 5 份，且只清理「已上传 COS」的目录
+任一环节失败 → 飞书 webhook 告警（加签）+ 退出码 1
+```
+
+- 凭证：数据库复用本仓库 `.env` 的 `AC_*_DATABASE_INFO`（与游戏服同源账号，三行对应三库，经 `MYSQL_PWD` 环境变量注入容器，不落命令行）；COS 凭证在宿主机 `~/.cos.yaml`
+- 幂等：COS 上同时间戳 manifest 已存在则跳过（`--force` 重传）
+- COS 保留期由桶生命周期规则控制（`acore-db-backup/` 前缀 30 天过期，控制台配置）
+- 执行结果落 `logs/db-backup-result-<时间戳>.json`（保留 7 天）
+
+```bash
+./scripts/acore-backup-databases.sh                        # dump + 上传（cron 用法）
+./scripts/acore-backup-databases.sh --dry-run              # 只 dump+生成 manifest，不上传
+./scripts/acore-backup-databases.sh --dir=<备份目录路径>     # 上传既有目录（迁移回填/补传）
+./scripts/acore-backup-databases.sh --test-alert           # 发送一条测试告警验证 webhook
+```
+
+crontab 样例（ubuntu 用户）：
+
+```cron
+# 数据库备份并上传 COS（每日 04:10，避开 04:00 worldserver 重启与 04:30 日志上传）
+10 4 * * * /workspace/acore-deploy/scripts/acore-backup-databases.sh >> /workspace/acore-deploy/logs/db-backup-cron.log 2>&1
+```
+
+### 恢复步骤（runbook）
+
+```bash
+# 1. 从 COS 下载对应时间戳的备份
+coscli cp cos://wow-warden-1259353115/acore-db-backup/realm2/<时间戳>/acore_world.sql.gz ./
+
+# 2. 导入容器（用户/密码取 .env 的 AC_*_DATABASE_INFO 或 root 凭证）
+gunzip -c acore_world.sql.gz | docker exec -i acore-mysql sh -c 'exec mysql -u<user> -p"<password>" acore_world'
+```
+
+建议每季度做一次恢复演练：下载最新 manifest → 逐库导入到临时库 → 核对表行数。
 
 ## 常用操作
 
