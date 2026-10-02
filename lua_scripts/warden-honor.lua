@@ -42,7 +42,7 @@ local function onCommand(_event, player, text, chatHandler)
     local sub = tokens[2]
     local name = tokens[3]
 
-    if sub == "get" and name and #tokens == 4 then
+    if sub == "get" and name and #tokens == 3 then
         local target = GetPlayerByName(name)
         if not target then
             respond(chatHandler, "[warden] player not online: " .. name)
@@ -54,7 +54,7 @@ local function onCommand(_event, player, text, chatHandler)
         return false
     end
 
-    if (sub == "set" or sub == "sub") and name and #tokens == 5 then
+    if (sub == "set" or sub == "sub") and name and #tokens == 4 then
         local value = tonumber(tokens[4])
         if not value or value < 0 or value ~= math.floor(value) then
             respond(chatHandler, "[warden] invalid value: " .. tostring(tokens[4]))
