@@ -21,10 +21,12 @@ services:
       resources:
         limits:
           cpus: '2'
-          memory: 4G
+          memory: 8G
         reservations:
           cpus: '1'
-          memory: 2G
+          memory: 4G
+    # memswap_limit 是「内存+swap」总量，10g - 8g = 2g swap 额度，与宿主机 2g swap 对齐
+    memswap_limit: 10g
     volumes:
       - ./data:/azerothcore/data
       - ./configs:/azerothcore/env/dist/etc
