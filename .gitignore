@@ -30,3 +30,10 @@ docker-compose.override.yml
 
 # coscli_ouput
 coscli_output
+
+# Claude Code 通用 skills（工具产物，不入库）；项目专用 skills 显式保留
+/.claude/skills/*
+!/.claude/skills/acore-build-deploy/
+!/.claude/skills/acore-deploy-prod/
+!/.claude/skills/acore-update-db/
+!/.claude/skills/acore-update-dbc/
