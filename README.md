@@ -130,6 +130,20 @@ docker-compose -f docker-compose.local.yml --env-file .env up -d
 ./scripts/acore-update-db.sh --sql-file /path/to/file.sql --database acore_characters
 ```
 
+### Lua 脚本（荣誉调整命令）
+
+`lua_scripts/warden-honor.lua` 配合 acore-manager 管理后台的荣誉处罚功能：注册 mod-ale 的 `PLAYER_EVENT_ON_COMMAND(42)` 钩子，拦截控制台/SOAP 伪命令 `wardenhonor`（游戏内输入一律忽略），供 GM 工具经 SOAP 对**在线玩家**做荣誉查询/设值/扣减（清零即 `set 0`，只作用于可花费荣誉 totalHonorPoints）。
+
+```bash
+# SOAP 直测（凭证 gmlevel>=3）
+.wardenhonor get <在线角色名>
+.wardenhonor set <在线角色名> 0    # 清零
+.wardenhonor sub <在线角色名> 500  # 扣 500（下限 0）
+
+# 热加载脚本（改完 lua_scripts 无需重启 worldserver）
+reload ale
+```
+
 ### DBC 同步
 
 `acore-deploy` 本身**不维护**原始 DBC 文件。原始 DBC 文件的唯一真相源已迁移到 [`acore-resouces`](https://github.com/domonic18/acore-resouces) 项目的 `data/wow-dbc` 子模块中。
